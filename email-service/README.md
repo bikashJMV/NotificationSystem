@@ -70,6 +70,7 @@ Run the following SQL script in your Supabase SQL Editor to enable logging:
 ```sql
 CREATE TABLE email_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    request_id UUID NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     event_name TEXT NOT NULL,
     recipient_email TEXT NOT NULL,
@@ -83,12 +84,33 @@ CREATE TABLE email_logs (
 
 ## 🚀 Usage & API Documentation
 
-### Endpoint: `POST /send/event`
-**Headers:**
+### 1. Endpoint: `GET /health`
+A public endpoint to check service uptime and discover available events. No API key required.
+```bash
+curl http://localhost:8000/health
+```
+
+### 2. Endpoint: `POST /send/event`
+**Headers Required:**
 - `X-API-Key`: Your configured API Key
 - `Content-Type`: `application/json`
 
-**Sample Payload (Asset Assigned):**
+This endpoint dynamically routes logic based on the `event_name` provided in the JSON body. Below are the specific payload structures required for each scenario.
+
+#### Scenario A: Welcome Email (`user.created`)
+Triggered when a new user joins the system.
+```json
+{
+  "event_name": "user.created",
+  "recipient_email": "new.employee@example.com",
+  "data": {
+    "name": "Employee Name"
+  }
+}
+```
+
+#### Scenario B: Asset Assigned (`asset.assigned`)
+Triggered when a laptop, phone, or any physical/digital asset is delegated.
 ```json
 {
   "event_name": "asset.assigned",
@@ -103,10 +125,20 @@ CREATE TABLE email_logs (
 }
 ```
 
-### Currently Supported Events:
-- `user.created` -> Loads `welcome.html`
-- `asset.assigned` -> Loads `asset_assigned.html`
-- `asset.returned` -> Loads `asset_returned.html`
+#### Scenario C: Asset Returned (`asset.returned`)
+Triggered to officially confirm when an asset is returned and logged back into inventory.
+```json
+{
+  "event_name": "asset.returned",
+  "recipient_email": "employee@example.com",
+  "data": {
+    "name": "Employee Name",
+    "asset_name": "MacBook Pro",
+    "serial_number": "C02XYZ12345",
+    "returned_date": "2026-12-31"
+  }
+}
+```
 
 ---
 

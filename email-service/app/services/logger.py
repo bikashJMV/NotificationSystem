@@ -6,12 +6,14 @@ logger = logging.getLogger(__name__)
 
 supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
-def log_email_event(event_name: str, recipient: str, subject: str, status: str, error_details: str = None):
+def log_email_event(event_name: str, recipient: str, subject: str, status: str, request_id: str, error_details: str = None):
     """
     Log the email event sync (to insert via Fastapi Background Tasks)
+    Carries request_id for end-to-end traceability
     """
     try:
         data = {
+            "request_id": request_id,
             "event_name": event_name,
             "recipient_email": recipient,
             "subject": subject,
@@ -20,4 +22,4 @@ def log_email_event(event_name: str, recipient: str, subject: str, status: str, 
         }
         supabase.table("email_logs").insert(data).execute()
     except Exception as e:
-        logger.error(f"Failed to log email event to Supabase: {e}")
+        logger.error(f"Failed to log email event to Supabase (Request {request_id}): {e}")
