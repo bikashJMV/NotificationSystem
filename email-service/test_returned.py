@@ -1,0 +1,30 @@
+import json
+import urllib.request
+from app.core.config import settings
+
+api_key = settings.API_KEY
+url = "http://localhost:8000/send/event"
+data = {
+    "event_name": "asset.returned",
+    "recipient_email": "doe692568@gmail.com",
+    "data": {
+        "name": "Bikash Prasad",
+        "asset_name": "iPhone 15 Pro",
+        "serial_number": "SN-IPH-987",
+        "returned_date": "2026-04-10"
+    }
+}
+payload = json.dumps(data).encode("utf-8")
+headers = {
+    "Content-Type": "application/json",
+    "X-API-Key": api_key
+}
+
+req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+print("Triggering Asset Returned Email...")
+try:
+    with urllib.request.urlopen(req) as response:
+        print("Status Code:", response.status)
+        print("Response Body:", response.read().decode("utf-8"))
+except Exception as e:
+    print(f"Error: {e}")
