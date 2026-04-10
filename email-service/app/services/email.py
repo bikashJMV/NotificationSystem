@@ -25,7 +25,7 @@ async def send_event_email(
     subject: str, 
     template_name: str, 
     template_data: dict,
-    cc: list[str] | str | None = None
+    cc: list[str] | str = []
 ):
     """
     Send an templated email using fastapi-mail background capabilities
@@ -46,7 +46,7 @@ async def send_event_email(
     message = MessageSchema(
         subject=subject,
         recipients=[recipient],
-        cc=final_ccs if final_ccs else None,
+        cc=final_ccs,
         template_body=template_data,
         subtype=MessageType.html
     )
