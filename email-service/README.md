@@ -34,7 +34,7 @@ This service is designed as an **independent plugin**. Instead of embedding emai
 ## ⚙️ Setup & Installation
 
 ### 1. Prerequisites
-- **Python 3.14+**
+- **Python 3.10+**
 - **UV** (Recommended for package management)
 - **Gmail App Password** (For SMTP relay)
 
@@ -53,7 +53,7 @@ MAIL_SSL_TLS=False
 
 # Observability
 SUPABASE_URL=your-supabase-url
-SUPABASE_KEY=your-supabase-anon-key
+SUPABASE_KEY=your-supabase-service-role-key # 🔴 IMPORTANT: Use the Service Role Key, not Anon Key!
 
 # Security
 API_KEY=your-secure-internal-api-key

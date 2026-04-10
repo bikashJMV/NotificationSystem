@@ -3,7 +3,7 @@ name = "email-service"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.135.3",
     "fastapi-mail[async]>=1.6.2",
