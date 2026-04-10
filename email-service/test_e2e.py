@@ -22,7 +22,7 @@ def print_result(success, msg):
 
 def test_health_check():
     print_header("Test 1: Health Check Endpoint")
-    url = f"{BASE_URL}/health"
+    url = f"{BASE_URL}/"
     req = urllib.request.Request(url, method="GET")
     
     try:
@@ -89,7 +89,7 @@ def test_invalid_event():
 
 def test_rate_limit_bypass(amount):
     print_header(f"Test 6: Rate Limiting Safety Check ({amount} fast requests)")
-    url = f"{BASE_URL}/health"
+    url = f"{BASE_URL}/"
     req = urllib.request.Request(url, method="GET")
     
     successes = 0

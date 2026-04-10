@@ -46,10 +46,10 @@ async def process_email_event(payload: EventPayload, request_id: str):
         logger.error(f"Error processing email event: {e}")
         log_email_event(payload.event_name, payload.recipient_email, event_info["subject"], "FAILED", request_id, str(e))
 
-@router.get("/health", status_code=200, tags=["Health"])
-async def health_check():
+@router.get("/", status_code=200, tags=["Health", "Root"])
+async def root():
     """
-    Health check endpoint. No authentication required.
+    Root / Health check endpoint. No authentication required.
     Returns service status, HTTP status code, and supported events.
     """
     return {
@@ -58,6 +58,7 @@ async def health_check():
         "service": "email-microservice",
         "version": "1.0.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "message": "Asset Manager Email Microservice is running securely.",
         "supported_events": list(EVENT_MAP.keys())
     }
 

@@ -84,10 +84,10 @@ CREATE TABLE email_logs (
 
 ## 🚀 Usage & API Documentation
 
-### 1. Endpoint: `GET /health`
+### 1. Endpoint: `GET /`
 A public endpoint to check service uptime and discover available events. No API key required.
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8000/
 ```
 
 ### 2. Endpoint: `POST /send/event`
