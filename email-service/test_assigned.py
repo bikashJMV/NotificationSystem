@@ -6,9 +6,9 @@ api_key = settings.API_KEY
 url = "http://localhost:8000/send/event"
 data = {
     "event_name": "asset.assigned",
-    "recipient_email": "doe692568@gmail.com",
+    "recipient_email": "vijit@jmv.co.in",
     "data": {
-        "name": "Bikash Prasad",
+        "name": "Vijit Sir",
         "asset_name": "MacBook Pro M3",
         "asset_model": "Space Black 16-inch",
         "serial_number": "SN-ABC-123",

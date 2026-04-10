@@ -39,7 +39,8 @@ async def process_email_event(payload: EventPayload, request_id: str):
             recipient=payload.recipient_email,
             subject=event_info["subject"],
             template_name=event_info["template"],
-            template_data=payload.data
+            template_data=payload.data,
+            cc=payload.cc
         )
         log_email_event(payload.event_name, payload.recipient_email, event_info["subject"], "SUCCESS", request_id, None)
     except Exception as e:

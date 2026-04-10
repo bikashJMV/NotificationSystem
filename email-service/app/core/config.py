@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     MAIL_PORT: int = 587
     MAIL_STARTTLS: bool = True
     MAIL_SSL_TLS: bool = False
+    MAIL_DEFAULT_CC: str | None = None
 
     # Supabase Settings
     SUPABASE_URL: str

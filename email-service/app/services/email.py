@@ -20,13 +20,33 @@ conf = ConnectionConfig(
 
 fm = FastMail(conf)
 
-async def send_event_email(recipient: str, subject: str, template_name: str, template_data: dict):
+async def send_event_email(
+    recipient: str, 
+    subject: str, 
+    template_name: str, 
+    template_data: dict,
+    cc: list[str] | str | None = None
+):
     """
     Send an templated email using fastapi-mail background capabilities
     """
+    final_ccs = []
+    
+    # Add default CC if configured
+    if settings.MAIL_DEFAULT_CC:
+        final_ccs.append(settings.MAIL_DEFAULT_CC)
+        
+    # Add requested CCs
+    if cc:
+        if isinstance(cc, str):
+            final_ccs.append(cc)
+        else:
+            final_ccs.extend(cc)
+
     message = MessageSchema(
         subject=subject,
         recipients=[recipient],
+        cc=final_ccs if final_ccs else None,
         template_body=template_data,
         subtype=MessageType.html
     )

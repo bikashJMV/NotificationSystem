@@ -6,9 +6,9 @@ api_key = settings.API_KEY
 url = "http://localhost:8000/send/event"
 data = {
     "event_name": "user.created",
-    "recipient_email": "doe692568@gmail.com",
+    "recipient_email": "vijit@jmv.co.in",
     "data": {
-        "name": "Bikash Prasad"
+        "name": "Vijit Sir"
     }
 }
 payload = json.dumps(data).encode("utf-8")

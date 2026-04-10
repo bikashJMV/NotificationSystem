@@ -6,9 +6,9 @@ api_key = settings.API_KEY
 url = "http://localhost:8000/send/event"
 data = {
     "event_name": "asset.returned",
-    "recipient_email": "doe692568@gmail.com",
+    "recipient_email": "vijit@jmv.co.in",
     "data": {
-        "name": "Bikash Prasad",
+        "name": "Vijit Sir",
         "asset_name": "iPhone 15 Pro",
         "serial_number": "SN-IPH-987",
         "returned_date": "2026-04-10"

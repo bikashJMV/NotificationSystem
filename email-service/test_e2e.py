@@ -44,7 +44,7 @@ def test_event(event_name, payload_data, test_number):
     
     data = {
         "event_name": event_name,
-        "recipient_email": "doe692568@gmail.com",
+        "recipient_email": "vijit@jmv.co.in",
         "data": payload_data
     }
     
@@ -70,7 +70,7 @@ def test_invalid_event():
     url = f"{BASE_URL}/send/event"
     data = {
         "event_name": "fake.event.doesnt.exist",
-        "recipient_email": "doe692568@gmail.com",
+        "recipient_email": "vijit@jmv.co.in",
         "data": {}
     }
     
