@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block header %}Asset Returned{% endblock %}
+{% block content %}
+<p style="color: #1a1a1a; margin: 0 0 20px 0;">Dear <strong>{{ employee_name }}</strong>,</p>
+<p style="color: #6b6b6b; margin: 0 0 20px 0;">Your asset return has been recorded by <strong>{{ admin_name }}</strong>.</p>
+<table>
+    <tr>
+        <th>CATEGORY</th>
+        <th>ASSET TAG</th>
+        <th>MODEL</th>
+        <th>DATE</th>
+    </tr>
+    <tr>
+        <td>{{ category }}</td>
+        <td>{{ asset_id }}</td>
+        <td>{{ model_no }}</td>
+        <td>{{ date }}</td>
+    </tr>
+</table>
+<p style="color: #6b6b6b; margin: 0;">If you have any questions, please reach out to the IT Team.</p>
+{% endblock %}

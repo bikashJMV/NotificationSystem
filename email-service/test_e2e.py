@@ -2,7 +2,7 @@ import json
 import urllib.request
 import urllib.error
 import time
-from app.core.config import settings
+from app.config import settings
 
 BASE_URL = "http://localhost:8000"
 API_KEY = settings.API_KEY

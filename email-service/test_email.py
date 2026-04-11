@@ -1,7 +1,7 @@
 import os
 import json
 import urllib.request
-from app.core.config import settings
+from app.config import settings
 
 api_key = settings.API_KEY
 url = "http://localhost:8000/send/event"

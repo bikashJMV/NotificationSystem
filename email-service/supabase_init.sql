@@ -1,17 +1,35 @@
 -- Execute this in your Supabase SQL Editor
--- Make sure to run this line below if you ALREADY ran the old script to add the new column:
-ALTER TABLE email_logs ADD COLUMN IF NOT EXISTS request_id UUID DEFAULT gen_random_uuid() NOT NULL;
 
+-- API Keys Table (hashed storage)
+CREATE TABLE IF NOT EXISTS api_keys (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    key_hash TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Email Audit Logs
 CREATE TABLE IF NOT EXISTS email_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     request_id UUID NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     event_name TEXT NOT NULL,
     recipient_email TEXT NOT NULL,
+    cc_emails TEXT[],
     subject TEXT NOT NULL,
     status TEXT NOT NULL,
-    error_details TEXT
+    retry_count INTEGER DEFAULT 0,
+    error_details TEXT,
+    asset_category TEXT,
+    asset_model TEXT,
+    asset_id TEXT,
+    dispatched_date TEXT
 );
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_email_logs_request_id ON email_logs(request_id);
+CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status);
+CREATE INDEX IF NOT EXISTS idx_email_logs_created_at ON email_logs(created_at);
 
 -- Optional: Add Row Level Security (RLS) if you want to restrict dashboard access,
 -- but since this is an internal log, you can leave it disabled or restrict to service role.
@@ -20,7 +38,7 @@ ALTER TABLE email_logs ENABLE ROW LEVEL SECURITY;
 -- Allow insert access to authenticated/service roles
 DROP POLICY IF EXISTS "Allow service role to insert logs" ON email_logs;
 CREATE POLICY "Allow service role to insert logs" ON email_logs
-    FOR INSERT 
+    FOR INSERT
     WITH CHECK (true);
 
 -- Allow reading logs for admins/service roles

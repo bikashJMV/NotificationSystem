@@ -12,10 +12,14 @@ class Settings(BaseSettings):
     MAIL_PORT: int
     MAIL_STARTTLS: bool
     MAIL_SSL_TLS: bool
+    MAIL_DEFAULT_CC: str | None = None
 
     SUPABASE_URL: str
     SUPABASE_KEY: str
-    API_KEY: str
+    EMAIL_SERVICE_API_KEY_HASH: str
+    BCRYPT_ROUNDS: int = 12
+    WORLDTIME_API_URL: str = "https://worldtimeapi.org/api/timezone/Asia/Kolkata"
+    RATE_LIMIT: str = "200/minute"
 
 settings = Settings()
 
@@ -28,6 +32,6 @@ mail_config = ConnectionConfig(
     MAIL_PORT=settings.MAIL_PORT,
     MAIL_STARTTLS=settings.MAIL_STARTTLS,
     MAIL_SSL_TLS=settings.MAIL_SSL_TLS,
-    TEMPLATE_FOLDER="app/templates/email",
+    TEMPLATE_FOLDER="app/templates/email/AssetManager",
     USE_CREDENTIALS=True,
 )
