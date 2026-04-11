@@ -1652,7 +1652,7 @@ curl -X POST http://localhost:8020/send/event \
 For issues or questions:
 1. Check Supabase logs for error details
 2. Review this README for configuration details
-3. Check FastAPI docs: http://localhost:8020/docs
+3. Check FastAPI docs: base_url/docs
 4. Contact IT Ops team
 
 ---
