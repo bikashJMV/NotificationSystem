@@ -12,7 +12,7 @@ This microservice solves the problem of email notification management by providi
 - Dynamic Jinja2 template rendering with Asset Manager dashboard aesthetic
 - To/CC recipient resolution based on role hierarchy
 - Full audit logging to Supabase for observability
-- Bcrypt-based API key authentication
+- SHA-256 HMAC-based API key authentication
 - Rate limiting (200 requests/minute via slowapi)
 - IST date calculation (UTC + 5:30)
 
@@ -30,7 +30,6 @@ This microservice solves the problem of email notification management by providi
 | Pydantic Settings | 2.13.1 | Environment variable management | Type-safe config, .env support, validation |
 | Slowapi | 0.1.9 | Rate limiting middleware | FastAPI-compatible, flexible, production-ready |
 | Uvicorn | 0.44.0 | ASGI server | Fast, production-ready, hot reload |
-| Bcrypt | 4.1.2 | Password hashing for API keys | Industry standard, configurable rounds, secure |
 
 ---
 
@@ -49,7 +48,7 @@ Client Application (Asset Manager, ERP, etc.)
 +---------------------------+
             |
             | 1. Rate Limit Check (slowapi)
-            | 2. API Key Verification (bcrypt)
+            | 2. API Key Verification (SHA-256 HMAC)
             | 3. Pydantic Validation (EmailRequest)
             v
 +---------------------------+
@@ -98,7 +97,7 @@ Client Application (Asset Manager, ERP, etc.)
 
 **Logging Layer (app/services/logger.py):** Synchronous Supabase logging for full audit trail (queued, success, failed states).
 
-**Security Layer (app/core/security.py):** Bcrypt-based API key verification with configurable rounds.
+**Security Layer (app/core/security.py):** SHA-256 HMAC-based API key verification.
 
 **Rate Limiting (app/core/limiter.py):** Centralized slowapi limiter instance (200/minute).
 
@@ -118,7 +117,7 @@ email-service/
 +-- app/
     |-- config.py                    # Settings class, mail_config
     |-- api/routes.py                # API endpoints: GET /, POST /send/event
-    |-- core/security.py             # Bcrypt API key verification
+    |-- core/security.py             # SHA-256 HMAC API key verification
     |-- core/limiter.py              # Centralized slowapi limiter
     |-- schemas/email.py             # Pydantic models: EmailRequest, ApiResponse
     |-- services/email.py             # send_with_retry, resolve_recipients
@@ -166,7 +165,7 @@ Content-Type: application/json
 
 **2. API Layer Processes Request**
 - Rate limit check: 200/minute per IP
-- API key verification: bcrypt comparison with stored hash
+- API key verification: SHA-256 HMAC comparison with stored hash
 - Pydantic validation: EmailRequest schema validation
 - Returns 202 Accepted with request_id
 
@@ -417,14 +416,13 @@ Templates use:
 | `MAIL_SSL_TLS` | boolean | Use SSL/TLS | `False` |
 | `SUPABASE_URL` | string | Supabase project URL | `https://xyz.supabase.co` |
 | `SUPABASE_KEY` | string | Supabase service role key (NOT anon key) | `eyJhbGc...` |
-| `EMAIL_SERVICE_API_KEY_HASH` | string | Bcrypt hash of API key | `$2b$12$...` |
+| `EMAIL_SERVICE_API_KEY_HASH` | string | SHA-256 hex digest of API key | `a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890` |
 
 ### Optional Variables
 
 | Variable | Type | Default | Description | Example Value |
 |----------|------|---------|-------------|--------------|
 | `MAIL_DEFAULT_CC` | string | `None` | Default CC recipient for all emails | `it@example.com` |
-| `BCRYPT_ROUNDS` | integer | `12` | Bcrypt hashing rounds for API keys | `12` |
 | `WORLDTIME_API_URL` | string | `https://worldtimeapi.org/api/timezone/Asia/Kolkata` | WorldTime API URL for IST date | `https://worldtimeapi.org/api/timezone/Asia/Kolkata` |
 | `RATE_LIMIT` | string | `200/minute` | Rate limit per IP | `200/minute` |
 
@@ -433,8 +431,8 @@ Templates use:
 **Server Side (email-service):**
 - All mail configuration variables (`MAIL_*`)
 - All Supabase variables (`SUPABASE_*`)
-- `EMAIL_SERVICE_API_KEY_HASH` (bcrypt hash)
-- `BCRYPT_ROUNDS`, `RATE_LIMIT`
+- `EMAIL_SERVICE_API_KEY_HASH` (SHA-256 hex digest)
+- `RATE_LIMIT`
 
 **Client Side (Asset Manager, ERP, etc.):**
 - Plain text API key (to be hashed and stored in `EMAIL_SERVICE_API_KEY_HASH`)
@@ -446,12 +444,12 @@ Templates use:
 
 ### Table 1: `api_keys`
 
-Stores bcrypt-hashed API keys for authentication.
+Stores SHA-256 hashed API keys for authentication.
 
 | Column | Type | Purpose | Example |
 |--------|------|---------|---------|
 | `id` | UUID | Primary key | `550e8400-e29b-41d4-a716-446655440000` |
-| `key_hash` | TEXT | Bcrypt hash of API key | `$2b$12$lLXKZykVWteAHADNVLpn2u566PRFwq3AQo5Xn5vUV7P3pwsV.ly26` |
+| `key_hash` | TEXT | SHA-256 hex digest of API key | `a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890` |
 | `created_at` | TIMESTAMP WITH TIME ZONE | Creation timestamp | `2026-04-11 12:34:56.123456+00:00` |
 | `is_active` | BOOLEAN | Active status | `true` |
 
@@ -577,7 +575,7 @@ Queue email event for processing with retry logic.
 **Authentication:** Required (X-API-Key header)
 
 **Headers Required:**
-- `X-API-Key`: Plain text API key (will be bcrypt-verified)
+- `X-API-Key`: Plain text API key (will be SHA-256 HMAC verified)
 - `Content-Type`: `application/json`
 
 **Request Body (EmailRequest):**
@@ -630,7 +628,7 @@ Queue email event for processing with retry logic.
 ```
 
 **Error Codes:**
-- `403 Forbidden`: Invalid API key (bcrypt verification failed)
+- `403 Forbidden`: Invalid API key (SHA-256 HMAC verification failed)
 - `422 Unprocessable Entity`: Pydantic validation error (invalid email, empty fields, etc.)
 - `429 Too Many Requests`: Rate limit exceeded (200/minute)
 
@@ -659,30 +657,29 @@ Queue email event for processing with retry logic.
 
 ## 11. Authentication
 
-### How Bcrypt API Key Verification Works
+### How SHA-256 HMAC API Key Verification Works
 
 **1. API Key Generation**
 ```python
 from app.core.security import hash_api_key
 
-# Generate bcrypt hash for a new API key
+# Generate SHA-256 hash for a new API key
 plain_api_key = "my-secure-api-key-123"
 hashed_key = hash_api_key(plain_api_key)
-# Returns: "$2b$12$lLXKZykVWteAHADNVLpn2u566PRFwq3AQo5Xn5vUV7P3pwsV.ly26"
+# Returns: "a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890"
 ```
 
 **2. Store Hash in Environment**
 ```env
-EMAIL_SERVICE_API_KEY_HASH=$2b$12$lLXKZykVWteAHADNVLpn2u566PRFwq3AQo5Xn5vUV7P3pwsV.ly26
-BCRYPT_ROUNDS=12
+EMAIL_SERVICE_API_KEY_HASH=a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890
 ```
 
 **3. Verification Flow**
 ```python
 # app/core/security.py
 async def verify_api_key(api_key: str = Security(api_key_header)):
-    """Verify X-API-Key against bcrypt hash stored in env"""
-    if not checkpw(api_key.encode(), settings.EMAIL_SERVICE_API_KEY_HASH.encode()):
+    """Verify X-API-Key against SHA-256 hash stored in env"""
+    if not hmac.compare_digest(api_key.encode(), settings.EMAIL_SERVICE_API_KEY_HASH.encode()):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API key",
@@ -701,7 +698,7 @@ Content-Type: application/json
 
 **5. Server Verifies**
 - Extracts `X-API-Key` header
-- Compares plain text key with bcrypt hash using `checkpw()`
+- Compares plain text key with SHA-256 hash using `hmac.compare_digest()`
 - Returns 403 if verification fails
 - Proceeds if verification succeeds
 
@@ -714,29 +711,28 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 # Output: my-secure-api-key-123
 ```
 
-**Step 2: Generate Bcrypt Hash**
+**Step 2: Generate SHA-256 Hash**
 ```python
 from app.core.security import hash_api_key
 
 plain_key = "my-secure-api-key-123"
 hashed_key = hash_api_key(plain_key)
 print(hashed_key)
-# Output: $2b$12$lLXKZykVWteAHADNVLpn2u566PRFwq3AQo5Xn5vUV7P3pwsV.ly26
+# Output: a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890
 ```
 
 **Step 3: Update .env**
 ```env
-EMAIL_SERVICE_API_KEY_HASH=$2b$12$lLXKZykVWteAHADNVLpn2u566PRFwq3AQo5Xn5vUV7P3pwsV.ly26
+EMAIL_SERVICE_API_KEY_HASH=a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890
 ```
 
 **Step 4: Distribute Plain Key to Clients**
 - Share `my-secure-api-key-123` with client applications
-- Never share the bcrypt hash
+- Never share the SHA-256 hash
 - Store plain key securely in client application environment variables
 
 ### Security Best Practices
 
-- Use at least 12 bcrypt rounds (default)
 - Generate API keys with at least 32 characters
 - Rotate API keys regularly
 - Never commit plain text keys to version control
@@ -855,8 +851,7 @@ SUPABASE_URL=https://xyz.supabase.co
 SUPABASE_KEY=your-supabase-service-role-key
 
 # Security
-EMAIL_SERVICE_API_KEY_HASH=$2b$12$your-bcrypt-hash-here
-BCRYPT_ROUNDS=12
+EMAIL_SERVICE_API_KEY_HASH=a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890
 
 # Rate Limiting
 RATE_LIMIT=200/minute
@@ -871,13 +866,9 @@ Run the SQL script in Supabase SQL Editor:
 ```
 
 ### Step 5: Generate API Key Hash
-```python
-# Run this Python script to generate hash
-from app.core.security import hash_api_key
-
-plain_key = "your-secure-api-key"
-hashed_key = hash_api_key(plain_key)
-print(hashed_key)
+```bash
+# Generate SHA-256 hash for your API key
+python -c "import hashlib; print(hashlib.sha256('your-secure-api-key'.encode()).hexdigest())"
 # Add output to EMAIL_SERVICE_API_KEY_HASH in .env
 ```
 
@@ -1141,8 +1132,7 @@ Add the following environment variables in Vercel dashboard:
 | `MAIL_SSL_TLS` | `False` | Production |
 | `SUPABASE_URL` | `https://xyz.supabase.co` | Production |
 | `SUPABASE_KEY` | `your-supabase-service-role-key` | Production |
-| `EMAIL_SERVICE_API_KEY_HASH` | `$2b$12$your-bcrypt-hash` | Production |
-| `BCRYPT_ROUNDS` | `12` | Production |
+| `EMAIL_SERVICE_API_KEY_HASH` | `a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890` | Production |
 | `RATE_LIMIT` | `200/minute` | Production |
 
 ### Deploy Command
@@ -1613,7 +1603,7 @@ python test_assigned.py
 python test_returned.py
 
 # Generate API key hash
-python -c "from app.core.security import hash_api_key; print(hash_api_key('your-key'))"
+python -c "import hashlib; print(hashlib.sha256('your-key'.encode()).hexdigest())"
 
 # Check health
 curl http://localhost:8020/
@@ -1638,9 +1628,9 @@ curl -X POST http://localhost:8020/send/event \
 - **Check:** Supabase logs for error details
 
 **Issue:** API key verification fails
-- **Check:** `EMAIL_SERVICE_API_KEY_HASH` is bcrypt hash (not plain text)
+- **Check:** `EMAIL_SERVICE_API_KEY_HASH` is SHA-256 hex digest (not plain text)
 - **Check:** Client sending plain text key in `X-API-Key` header
-- **Check:** Bcrypt rounds match (default 12)
+- **Check:** Hash was generated with correct command
 
 **Issue:** Rate limit exceeded
 - **Check:** `RATE_LIMIT` in `.env` (default 200/minute)
@@ -1658,5 +1648,5 @@ For issues or questions:
 ---
 
 **Version:** 1.0.0  
-**Last Updated:** 2026-04-11  
+**Last Updated:** 2026-04-12 
 **License:** Internal Use Only
